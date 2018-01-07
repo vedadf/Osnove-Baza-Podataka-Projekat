@@ -156,82 +156,257 @@ INSERT INTO Zaposleni(id, ime, prezime, odjel_id, posao_id, datum_zaposlenja) VA
 SELECT * from Zaposleni;
 
 CREATE TABLE OpkladeIgraci(
-  id INTEGER PRIMARY KEY,
-  uplaceno_novca FLOAT,
-  datum_uplate DATE,
-  odabrani_igrac_id INTEGER,
-  odabrana_utakmica_id INTEGER,
-  broj_poena INTEGER,
-  poslovnica_id INTEGER,
-  klijent_id INTEGER
+  id INTEGER PRIMARY KEY NOT NULL,
+  uplaceno_novca FLOAT NOT NULL,
+  datum_uplate DATE NOT NULL,
+  odabrani_igrac_id INTEGER NOT NULL,
+  odabrana_utakmica_id INTEGER NOT NULL,
+  broj_poena INTEGER NOT NULL,
+  poslovnica_id INTEGER NOT NULL,
+  klijent_id INTEGER NOT NULL
 );
+
+alter table OpkladeIgraci add CONSTRAINT fk_poslovnica_id FOREIGN KEY(poslovnica_id) REFERENCES Poslovnice(id);
+alter table OpkladeIgraci add CONSTRAINT fk_klijent_id FOREIGN KEY (klijent_id) REFERENCES Klijenti(id);
+ALTER TABLE OpkladeIgraci add CONSTRAINT fk_odabrani_igrac FOREIGN KEY (odabrani_igrac_id) REFERENCES Igraci(id);
+ALTER TABLE OpkladeIgraci add CONSTRAINT fk_odabrana_utakmica FOREIGN KEY (odabrana_utakmica_id) REFERENCES Utakmice(id);
+
+DROP SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE  NOCYCLE ;
+
+INSERT INTO OpkladeIgraci (id, uplaceno_novca, datum_uplate, odabrani_igrac_id, odabrana_utakmica_id, broj_poena, poslovnica_id, klijent_id)
+  VALUES (inc.nextval, 600, current_date, 1, 1, 11, 0, 1);
+INSERT INTO OpkladeIgraci (id, uplaceno_novca, datum_uplate, odabrani_igrac_id, odabrana_utakmica_id, broj_poena, poslovnica_id, klijent_id)
+  VALUES (inc.nextval, 400, current_date, 8, 4, 8, 0, 1);
+INSERT INTO OpkladeIgraci (id, uplaceno_novca, datum_uplate, odabrani_igrac_id, odabrana_utakmica_id, broj_poena, poslovnica_id, klijent_id)
+  VALUES (inc.nextval, 600, current_date, 15, 11, 1, 0, 2);
+
 
 CREATE TABLE OpkladeUtakmice(
-  id INTEGER PRIMARY KEY,
-  uplaceno_novca FLOAT,
-  datum_uplate DATE,
-  odabrana_utakmica_id INTEGER,
-  poeni_domaci INTEGER,
-  poeni_gost INTEGER,
-  poslovnica_id INTEGER,
-  klijent_id INTEGER
+  id INTEGER PRIMARY KEY NOT NULL ,
+  uplaceno_novca FLOAT NOT NULL ,
+  datum_uplate DATE NOT NULL ,
+  odabrana_utakmica_id INTEGER NOT NULL ,
+  poeni_domaci INTEGER NOT NULL ,
+  poeni_gost INTEGER NOT NULL ,
+  poslovnica_id INTEGER NOT NULL ,
+  klijent_id INTEGER NOT NULL
 );
+
+ALTER TABLE OpkladeUtakmice add CONSTRAINT fk_poslovnica2_id FOREIGN KEY(poslovnica_id) REFERENCES Poslovnice(id);
+ALTER TABLE OpkladeUtakmice add CONSTRAINT fk_klijent2_id FOREIGN KEY (klijent_id) REFERENCES Klijenti(id);
+ALTER TABLE OpkladeUtakmice add CONSTRAINT fk_odabrana2_utakmica FOREIGN KEY (odabrana_utakmica_id) REFERENCES Utakmice(id);
+
+DROP SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE  NOCYCLE ;
+
+INSERT INTO OpkladeUtakmice (id, uplaceno_novca, datum_uplate, odabrana_utakmica_id, poeni_domaci, poeni_gost, poslovnica_id, klijent_id) VALUES
+  (inc.nextval, 5000, current_date, 3, 2, 3, 8, 6);
+INSERT INTO OpkladeUtakmice (id, uplaceno_novca, datum_uplate, odabrana_utakmica_id, poeni_domaci, poeni_gost, poslovnica_id, klijent_id) VALUES
+  (inc.nextval, 200, current_date, 7, 8, 10, 3,7);
 
 CREATE TABLE OpkladeMecevi(
-  id INTEGER PRIMARY KEY,
-  uplaceno_novca FLOAT,
-  datum_uplate DATE,
-  odabrani_mec_id INTEGER,
-  poeni_domaci INTEGER,
-  poeni_gost INTEGER,
-  poslovnica_id INTEGER,
-  klijent_id INTEGER
+  id INTEGER PRIMARY KEY NOT NULL ,
+  uplaceno_novca FLOAT NOT NULL ,
+  datum_uplate DATE NOT NULL ,
+  odabrani_mec_id INTEGER NOT NULL ,
+  poeni_domaci INTEGER NOT NULL ,
+  poeni_gost INTEGER NOT NULL ,
+  poslovnica_id INTEGER NOT NULL ,
+  klijent_id INTEGER NOT NULL
 );
+
+ALTER TABLE OpkladeMecevi add CONSTRAINT fk_poslovnica3_id FOREIGN KEY(poslovnica_id) REFERENCES Poslovnice(id);
+ALTER TABLE OpkladeMecevi add CONSTRAINT fk_klijent3_id FOREIGN KEY (klijent_id) REFERENCES Klijenti(id);
+ALTER TABLE OpkladeMecevi add CONSTRAINT fk_odabrani_mec FOREIGN KEY (odabrani_mec_id) REFERENCES Mecevi(id);
+
+DROP SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE  NOCYCLE ;
+
+INSERT INTO OpkladeMecevi (id, uplaceno_novca, datum_uplate, odabrani_mec_id, poeni_domaci, poeni_gost, poslovnica_id, klijent_id) VALUES
+  (inc.nextval, 1200, current_date, 1, 1, 0, 5, 9);
+INSERT INTO OpkladeMecevi (id, uplaceno_novca, datum_uplate, odabrani_mec_id, poeni_domaci, poeni_gost, poslovnica_id, klijent_id) VALUES
+  (inc.nextval, 1200, current_date, 2, 1, 2, 8, 6);
+
+SELECT * FROM Klijenti;
+
 
 CREATE TABLE IgraciEfikasnost(
-  id INTEGER PRIMARY KEY,
-  igrac_id INTEGER,
-  utakmica_id INTEGER,
-  broj_poena INTEGER
+  id INTEGER PRIMARY KEY NOT NULL ,
+  igrac_id INTEGER NOT NULL ,
+  utakmica_id INTEGER NOT NULL ,
+  broj_poena INTEGER NOT NULL
 );
 
+alter table IgraciEfikasnost add CONSTRAINT fk_igrac_id FOREIGN KEY(igrac_id) REFERENCES Igraci(id);
+alter table IgraciEfikasnost add CONSTRAINT fk_utakmica_id FOREIGN KEY(utakmica_id) REFERENCES Utakmice(id);
+
+drop SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 nocache NOCYCLE ;
+
+insert into IgraciEfikasnost (id, igrac_id, utakmica_id, broj_poena) VALUES (inc.nextval, 1, 1, 3);
+insert into IgraciEfikasnost (id, igrac_id, utakmica_id, broj_poena) VALUES (inc.nextval, 8, 4, 1);
+insert into IgraciEfikasnost (id, igrac_id, utakmica_id, broj_poena) VALUES (inc.nextval, 15, 11, 0);
+
 CREATE TABLE Igraci(
-  id INTEGER PRIMARY KEY,
-  ime VARCHAR(100),
-  prezime VARCHAR(100),
-  poeni_ove_sezone INTEGER,
+  id INTEGER PRIMARY KEY NOT NULL ,
+  ime VARCHAR(100) NOT NULL ,
+  prezime VARCHAR(100) NOT NULL ,
+  poeni_ove_sezone INTEGER NOT NULL ,
   tim_id INTEGER
 );
 
+drop SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE NOCYCLE ;
+
+alter table Igraci add CONSTRAINT fk_tim_id FOREIGN KEY(tim_id) REFERENCES Timovi(id);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Joel', 'Buchanan', 12, 1);
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Pat', 'Grant', 5, 1);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone) VALUES (inc.nextval, 'Tyrone', 'Reyes', 10);
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone) VALUES (inc.nextval, 'Chris', 'Hall', 13);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Flora', 'Hale', 1, 2);
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Debbie', 'Wise', 11, 2);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Susie', 'Wells', 51, 3);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Flora', 'Hale', 32, 4);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Joey', 'Ball', 22, 5);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Gilbert', 'Moran', 18, 6);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Ignacio', 'Blake', 11, 9);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Chris', 'Scott', 12, 10);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Agnes', 'Lawson', 13, 11);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Jeremy', 'Lindsey', 14, 12);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Maurice', 'May', 15, 13);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Beatry', 'Luna', 16, 14);
+
+INSERT INTO Igraci (id, ime, prezime, poeni_ove_sezone, tim_id) VALUES (inc.nextval, 'Milton', 'Williamson', 17, 15);
+
+SELECT * from Igraci;
+
 CREATE TABLE Mecevi(
-  id INTEGER PRIMARY KEY,
-  igrac_domaci_id INTEGER,
-  igrac_gost_id INTEGER,
-  poeni_domaci INTEGER,
-  poeni_gost INTEGER
+  id INTEGER PRIMARY KEY NOT NULL ,
+  igrac_domaci_id INTEGER NOT NULL ,
+  igrac_gost_id INTEGER NOT NULL ,
+  poeni_domaci INTEGER NOT NULL ,
+  poeni_gost INTEGER NOT NULL
 );
+
+ALTER TABLE Mecevi add CONSTRAINT fk_igrac_domaci_id FOREIGN KEY(igrac_domaci_id) REFERENCES Igraci(id);
+ALTER TABLE Mecevi add CONSTRAINT fk_igrac_gost_id FOREIGN KEY(igrac_gost_id) REFERENCES Igraci(id);
+
+drop SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE NOCYCLE ;
+
+INSERT INTO Mecevi (id, igrac_domaci_id, igrac_gost_id, poeni_domaci, poeni_gost) VALUES
+  (inc.nextval, 3, 4, 1, 1);
+INSERT INTO Mecevi (id, igrac_domaci_id, igrac_gost_id, poeni_domaci, poeni_gost) VALUES
+  (inc.nextval, 4, 3, 2, 1);
+
 
 CREATE TABLE  Timovi(
-  id INTEGER PRIMARY KEY,
-  naziv VARCHAR(100),
-  poeni_ove_sezone VARCHAR(100),
-  trener VARCHAR(100),
-  liga_id INTEGER
+  id INTEGER PRIMARY KEY NOT NULL ,
+  naziv VARCHAR(100) NOT NULL ,
+  poeni_ove_sezone VARCHAR(100) NOT NULL ,
+  trener VARCHAR(100) NOT NULL ,
+  liga_id INTEGER NOT NULL
 );
+
+drop SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE NOCYCLE ;
+
+alter table Timovi add CONSTRAINT fk_liga_id FOREIGN KEY(liga_id) REFERENCES Lige(id);
+alter table Timovi add CONSTRAINT uniq_naziv UNIQUE(naziv);
+
+INSERT INTO Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Real Madrid', 22, 'Zinedine Zidane', 1);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Barcelona', 23, 'Roberto Carlos', 1);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Inter', 18, 'Luis Enrique', 1);
+
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Sarajevo', 11, 'Husen Kapetan', 2);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Crvena Zvezda', 13, 'Vladan Milojevic', 2);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Hajduk', 11, 'Zeljko Kopic', 2);
+
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'LA Lakers', 23, 'Leona Castillo', 4);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Golden State Warriors', 28, 'Roberto Carlos', 4);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Boston Celtics', 20, 'Margarita Ross', 4);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Oklahoma City Thunder', 31, 'Casey Stone', 4);
+
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'New York Knicks', 16, 'Terrance King', 5);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Chicago Bulls', 17, 'Annete Lawson', 5);
+insert into Timovi (id, naziv, poeni_ove_sezone, trener, liga_id) VALUES (inc.nextval, 'Toronto Raptors', 18, 'Patty Drake', 5);
+
+SELECT * FROM Timovi;
 
 CREATE TABLE Utakmice(
-  id INTEGER PRIMARY KEY ,
-  tim_domaci_id INTEGER,
-  tim_gost_id INTEGER,
-  poeni_domacin INTEGER,
-  poeni_gost INTEGER
+  id INTEGER PRIMARY KEY NOT NULL ,
+  tim_domaci_id INTEGER NOT NULL ,
+  tim_gost_id INTEGER NOT NULL ,
+  poeni_domacin INTEGER NOT NULL ,
+  poeni_gost INTEGER NOT NULL
 );
 
+drop SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE NOCYCLE ;
+
+alter TABLE Utakmice add CONSTRAINT fk_domacin_id FOREIGN KEY(tim_domaci_id) REFERENCES Timovi(id);
+alter TABLE Utakmice add CONSTRAINT fk_gost_id FOREIGN KEY(tim_gost_id) REFERENCES Timovi(id);
+
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 1, 2, 2, 2);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 1, 3, 1, 2);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 2, 3, 2, 3);
+
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 4, 5, 1, 1);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 4, 6, 2, 1);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 5, 6, 4, 2);
+
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 9, 10, 22, 36);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 9, 11, 44, 42);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 12, 9, 51, 34);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 11, 12, 47, 44);
+
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 13, 14, 1, 1);
+insert into Utakmice (id, tim_domaci_id, tim_gost_id, poeni_domacin, poeni_gost) VALUES
+  (inc.nextval, 14, 13, 1, 1);
+
+select * from Utakmice;
+
 CREATE TABLE Lige(
-  id INTEGER PRIMARY KEY,
-  ime VARCHAR(100),
-  sport VARCHAR(100)
+  id INTEGER PRIMARY KEY NOT NULL ,
+  ime VARCHAR(100) NOT NULL ,
+  sport VARCHAR(100) NOT NULL
 );
+
+drop SEQUENCE inc;
+CREATE SEQUENCE inc INCREMENT BY 1 MINVALUE 0 NOCACHE NOCYCLE ;
+
+insert into Lige (id, ime, sport) VALUES (inc.nextval, 'Liga A', 'Fudbal');
+insert into Lige (id, ime, sport) VALUES (inc.nextval, 'Liga B', 'Fudbal');
+insert into Lige (id, ime, sport) VALUES (inc.nextval, 'Liga C', 'Fudbal');
+insert into Lige (id, ime, sport) VALUES (inc.nextval, 'A Liga', 'Kosarka');
+insert into Lige (id, ime, sport) VALUES (inc.nextval, 'B Liga', 'Kosarka');
+
+SELECT * from Lige;
 
 SELECT table_name FROM user_tables;
 

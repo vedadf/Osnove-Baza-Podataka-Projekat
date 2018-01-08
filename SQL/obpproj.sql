@@ -411,3 +411,72 @@ SELECT * from Lige;
 SELECT table_name FROM user_tables;
 
 SELECT * FROM Klijenti;
+
+/*1 Odjeli u glavnoj poslovnici*/
+
+SELECT o.naziv_odjela from Odjeli o, Poslovnice p where o.poslovnica_id = p.id AND p.sjediste = 'Ciuadad de Juarez';
+
+/*2 Klijenti koji nemaju smanjenje poreza sortirani prema opadajucem redoslijedu*/
+
+SELECT k.ime || ' ' || k.prezime "Naziv klijenta" , k.smanjenje_poreza"Procenat smanjenja poreza" FROM Klijenti k, Poslovnice p
+WHERE k.poslovnica_id = p.id
+AND k.smanjenje_poreza IS NOT NULL
+ORDER BY k.smanjenje_poreza DESC;
+
+/*3 Prosjecna vrijednost dostupnih sredstava klijenata u poslovnici u Havani*/
+
+SELECT ROUND(AVG(k.dostupna_sredstva), 2) "Dostupna sredstva prosjek" FROM Klijenti k, Poslovnice p
+WHERE k.poslovnica_id = p.id
+AND p.sjediste LIKE '%Havana%';
+
+/*4 Naziv sefa glavne poslovnice*/
+
+SELECT z.ime || ' ' || z.prezime "Naziv sefa" FROM Zaposleni z, Poslovi p, Odjeli o, Poslovnice l
+WHERE p.id = z.posao_id
+AND o.id = z.odjel_id
+AND o.poslovnica_id = l.id
+AND l.tip_poslovnice LIKE 'glavna'
+AND p.naziv_posla LIKE 'sef';
+
+/*5 Svi zaposleni, njihovi poslovi i plate koji rade u odjelu podrska u Sarajevu */
+
+SELECT z.ime || ' ' || z.prezime "Naziv" , p.naziv_posla,  p.plata FROM Zaposleni z, Poslovi p, Poslovnice l, Odjeli o
+WHERE l.id = o.poslovnica_id
+AND o.id = z.odjel_id
+AND o.naziv_odjela LIKE 'podrska'
+AND l.sjediste LIKE 'Sarajevo'
+AND z.posao_id = p.id;
+
+/*6 Igraci koji nemaju tim*/
+
+SELECT i.ime || ' ' || i.prezime "Naziv igraca", i.poeni_ove_sezone "Poeni" FROM Igraci i WHERE i.tim_id IS NULL ;
+
+/*7 Prikaz tima igraca i njihovih imena kojima se pratila efikasnost*/
+
+SELECT t.naziv "Naziv tima", i.ime || ' ' || i.prezime "Naziv igraca"
+  FROM Timovi t, Igraci i, IgraciEfikasnost ie
+WHERE ie.igrac_id = i.id
+AND i.tim_id = t.id;
+
+/*8 Prikaz klijenata koji se nisu kladili*/
+
+SELECT DISTINCT k.ime ||' '|| k.prezime "Naziv klijenta", p.sjediste "Sjediste poslovnice"
+  FROM Klijenti k, Poslovnice p, OpkladeIgraci oi
+WHERE oi.klijent_id <> k.id
+AND k.poslovnica_id = p.id;
+
+/*9 Klijenti koji su pogodili ishod opklade na utakmice*/
+
+SELECT k.ime ||' '|| k.prezime "Naziv klijenta", ou.uplaceno_novca "Uplaceno novca"
+FROM Klijenti k, OpkladeUtakmice ou, Utakmice u
+WHERE k.id = ou.klijent_id
+AND ou.odabrana_utakmica_id = u.id
+AND ou.poeni_domaci = u.poeni_domacin
+AND ou.poeni_gost = u.poeni_gost;
+
+/*10 Naziv klijenta i njihov potencijalni dobitak sa uracunatom povecanom stopom dobitka i smanjenja poreza ako su uplatili 4000 pod uslovom da imaju toliko dostupnih sredstava*/
+
+SELECT k.ime || ' ' || k.prezime "Naziv klijenta", 4000 + (1000 * Nvl(k.povecana_stopa_dobitka,0)) + (1000 * Nvl(k.smanjenje_poreza,0)) Dobitak
+FROM Klijenti k
+WHERE k.dostupna_sredstva >= 4000;
+

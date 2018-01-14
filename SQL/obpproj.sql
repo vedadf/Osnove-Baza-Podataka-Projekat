@@ -512,3 +512,111 @@ SELECT Max(Count(o.id)) "Broj odjela"
   FROM Poslovnice p, Odjeli o
 WHERE p.id = o.poslovnica_id
 GROUP BY o.poslovnica_id;
+
+/*UPITI SA PODUTPITIMA*/
+
+/*1. Zaposleni koji zaradjuju platu vecu od prosjecne plate zaposlenih u odjelima 23 i 11 sortirano u opadajucem redoslijedu*/
+
+SELECT z.ime || ' ' || z.prezime "Naziv zaposlenog", p.plata "Plata"
+  FROM Zaposleni z, Poslovi p
+WHERE z.posao_id = p.id
+AND p.plata > (SELECT Avg(p.plata)
+                FROM Zaposleni z, Poslovi p
+                WHERE z.posao_id = p.id
+                AND (z.odjel_id = 23 OR z.odjel_id = 11)
+                )
+ORDER BY p.plata DESC;
+
+/*2. Zaposleni koji rade u istom odjelu kao i neki od zaposlenih cije ime pocinje sa 'A'*/
+
+SELECT z.ime || ' ' || z.prezime "Naziv zaposlenog", z.odjel_id "Odjel"
+  FROM Zaposleni z
+WHERE z.odjel_id = ANY (SELECT o.id
+                        FROM Odjeli o, Zaposleni z
+                        WHERE z.odjel_id = o.id
+                        AND z.ime LIKE 'A%');
+
+/*3. Zaposleni koji primaju platu manju od plate Aditya Bagus*/
+
+SELECT z.ime || ' ' || z.prezime "Naziv zaposlenog", z.odjel_id "Odjel", p.naziv_posla "Posao", p.plata "Plata"
+  FROM Zaposleni z, Poslovi p
+WHERE z.posao_id = p.id
+AND p.plata < (SELECT pp.plata
+               FROM Poslovi pp, Zaposleni zz
+               WHERE pp.id = zz.posao_id
+               AND zz.ime LIKE '%Aditya%'
+               AND zz.prezime LIKE '%Bagus%');
+
+
+/*4. Zaposleni koji ne primaju najvecu i najmanju platu*/
+
+SELECT z.ime || ' ' || z.prezime "Naziv zaposlenog", p.plata "Plata"
+  FROM Zaposleni z, Poslovi p
+WHERE z.posao_id = p.id
+AND z.posao_id = p.id
+AND p.plata <> (SELECT Max(pp.plata) FROM Poslovi pp)
+AND p.plata <> (SELECT Min(pp.plata) FROM poslovi pp)
+ORDER BY p.plata DESC;
+
+/*5. Klijenti cija su dostupna sredstva veca od dostupnih sredstava klijenata koji imaju povecanu stopu dobitka*/
+
+SELECT k.ime || ' ' || k.prezime "Naziv klijenta" , k.dostupna_sredstva "Dostupna sredstva"
+  FROM Klijenti k
+WHERE k.dostupna_sredstva > ALL (SELECT kk.dostupna_sredstva
+                                 FROM Klijenti kk
+                                 WHERE kk.povecana_stopa_dobitka IS NOT NULL);
+
+/*UPITI SA VISE OD JEDNOG NIVOA PODUPITA*/
+
+/*1. Poslovnice sa raspolozivim sredstvima vecim od srednje vrijednosti raspolozivih sredstava svih poslovnica
+koje imaju vise od jednog odjela*/
+
+SELECT p.sjediste "Sjediste", p.raspoloziva_sredstva "Raspoloziva sredstva"
+  FROM Poslovnice p
+WHERE p.raspoloziva_sredstva > (SELECT Avg(pp.raspoloziva_sredstva)
+                                FROM Poslovnice pp
+                                WHERE (SELECT Count(o.id)
+                                       FROM Odjeli o
+                                       WHERE pp.id = o.poslovnica_id) > 1);
+
+/*2. Utakmice u kojima su domacini imali vise poena od prosjecne vrijednosti poena gostiju svih utakmica ciji poeni su
+ takodjer veci od srednje vrijednosti poena gostiju u mecevima*/
+
+SELECT *
+  FROM Utakmice
+WHERE poeni_domacin > (SELECT Avg(u.poeni_gost)
+                       FROM Utakmice u
+                       WHERE u.poeni_gost > (SELECT Avg(m.poeni_gost)
+                                             FROM Mecevi m));
+
+
+
+/*SUBTOTALI*/
+
+/*1. Ukupna dostupna sredstva klijenata po svakoj poslovnici kao i zbir ukupnih sredstava svih poslovnica */
+
+SELECT p.sjediste "Poslovnica", Sum(k.dostupna_sredstva) "Dostupna sredstva"
+FROM Poslovnice p, Klijenti k
+WHERE p.id = k.poslovnica_id
+GROUP BY ROLLUP (p.sjediste);
+
+/*2. Ukupna plata zaposlenog grupisano po odjelu i nazivu posla*/
+
+SELECT Sum(p.plata)"Plata", z.odjel_id "Odjel", p.naziv_posla "Naziv posla"
+FROM Zaposleni z, Poslovi p
+WHERE z.posao_id = p.id
+GROUP BY CUBE (z.odjel_id, p.naziv_posla);
+
+/*UNION*/
+
+SELECT Poslovnice.id, sjediste, raspoloziva_sredstva
+FROM Poslovnice
+LEFT JOIN Odjeli
+ON Poslovnice.id = Odjeli.poslovnica_id
+UNION ALL
+SELECT Poslovnice.id, sjediste, raspoloziva_sredstva
+FROM Poslovnice
+RIGHT JOIN Odjeli
+ON Poslovnice.id = Odjeli.poslovnica_id
+
+/*INDEXI*/

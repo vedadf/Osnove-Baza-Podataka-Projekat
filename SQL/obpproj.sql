@@ -480,3 +480,35 @@ SELECT k.ime || ' ' || k.prezime "Naziv klijenta", 4000 + (1000 * Nvl(k.povecana
 FROM Klijenti k
 WHERE k.dostupna_sredstva >= 4000;
 
+/*UPITI SA GRUPNIM FUNKCIJAMA*/
+
+/*1. suma raspolozivih sredstava svih poslovnica */
+
+SELECT Sum(raspoloziva_sredstva)"Suma raspolozivih sredstava" FROM Poslovnice;
+
+/*2. Srednja vrijednost i suma dostupnih sredstava klijenata na 2 decimale */
+
+SELECT Round(Avg(k.dostupna_sredstva), 2) "Srednja vrijednost", Round(Sum(k.dostupna_sredstva), 2) "Suma dostupnih sredstava"
+FROM Klijenti k;
+
+/*3. Broj zaposlenih po odjelima pri cemu je broj zaposlenih manji od srednje vrijednosti svih zaposlenih */
+
+SELECT Count(z.id) "Broj zaposlenih", o.naziv_odjela "Naziv odjela"
+  FROM Zaposleni z, Odjeli o
+WHERE z.odjel_id = o.id
+GROUP BY o.naziv_odjela
+HAVING Avg(z.id) > Count(z.id);
+
+/*4. Sjediste Poslovnica koje imaju raspolozivih sredstava vise od zbira suma opklada igraca i opklada utakmica */
+
+SELECT p.sjediste, Sum(ou.uplaceno_novca) + Sum(oi.uplaceno_novca) + Sum(om.uplaceno_novca)"Suma"
+  FROM OpkladeUtakmice ou, OpkladeIgraci oi, OpkladeMecevi om, Poslovnice p
+HAVING p.raspoloziva_sredstva > Sum(ou.uplaceno_novca) + Sum(oi.uplaceno_novca) + Sum(om.uplaceno_novca)
+GROUP BY p.sjediste, p.raspoloziva_sredstva;
+
+/*5. Najvise odjela u poslovnici */
+
+SELECT Max(Count(o.id)) "Broj odjela"
+  FROM Poslovnice p, Odjeli o
+WHERE p.id = o.poslovnica_id
+GROUP BY o.poslovnica_id;

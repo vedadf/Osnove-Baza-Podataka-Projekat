@@ -619,4 +619,226 @@ FROM Poslovnice
 RIGHT JOIN Odjeli
 ON Poslovnice.id = Odjeli.poslovnica_id
 
-/*INDEXI*/
+/*INDEKSI*/
+
+CREATE INDEX naziv_klijenta_index ON Klijenti(ime, prezime);
+CREATE INDEX informacija_posl_index ON Poslovnice(sjediste, raspoloziva_sredstva);
+CREATE INDEX svi_poslovi_index ON Poslovi(naziv_posla, plata);
+CREATE INDEX zaposleni_index ON Zaposleni(ime, prezime, datum_zaposlenja);
+CREATE INDEX igraci_index ON Igraci(ime, prezime, poeni_ove_sezone);
+
+/*FUNKCIJE*/
+
+/*1. funkcija koja vraca vecu vrijednost varijable tipa float*/
+CREATE OR REPLACE FUNCTION je_veci(
+  a in float,
+  b in float
+)
+return FLOAT
+IS
+  BEGIN
+    IF (a > b) THEN return a;
+    ELSE return b;
+    END IF;
+  END first_fun;
+
+/*2. Funkcija za provjeru postojanja klijenta koja vraca id klijenta ako je on pronadjen, ako ne onda vraca -1*/
+
+CREATE OR REPLACE FUNCTION klijent_postoji(
+  imee in VARCHAR,
+  prezimee in VARCHAR
+)
+  return INTEGER
+  IS
+    broj INTEGER;
+  BEGIN
+    SELECT k.id INTO broj
+    FROM Klijenti k
+    WHERE k.ime LIKE imee
+    AND k.prezime LIKE prezimee;
+
+    if(Nvl(broj, 0) != 0) then return broj;
+      else return -1;
+
+    END IF;
+  END klijent_postoji;
+
+/*3. Funkcija za dobavljanje prosjecne vrijednosti dostupnih sredstava klijenata u odabranoj poslovnici*/
+
+CREATE OR REPLACE FUNCTION daj_dostupna_sredstva(
+  poslovnica INTEGER
+)
+  return FLOAT
+  IS
+    rez FLOAT;
+  BEGIN
+    SELECT Avg(k.dostupna_sredstva) INTO rez FROM Klijenti k
+    WHERE k.poslovnica_id = poslovnica;
+    Nvl(rez, -1);
+    return rez;
+  END;
+
+/*4. Funkcija koja vraca naziv zaposlenog i njegovu platu*/
+
+CREATE OR REPLACE FUNCTION daj_zaposleni_platu(
+  id_zaposlenog INTEGER
+)
+RETURN VARCHAR
+IS
+  lv_rez VARCHAR(255);
+  lv_ime VARCHAR(255);
+  lv_prezime VARCHAR(255);
+  lv_naziv VARCHAR(255);
+  lv_plata float;
+  lv_broj_zap INTEGER;
+
+  CURSOR c_broj_zap IS
+    SELECT Count(id) INTO lv_broj_zap FROM Zaposleni
+      WHERE id = id_zaposlenog;
+
+BEGIN
+
+  if(lv_broj_zap = 1) then
+    SELECT z.ime, z.prezime, p.plata INTO lv_ime, lv_prezime, lv_plata
+    FROM Zaposleni z, Poslovi p
+    WHERE z.id = id_zaposlenog AND z.posao_id = p.id;
+    lv_rez := CONCAT(CONCAT(lv_ime, lv_prezime), TO_CHAR(lv_plata));
+    return lv_rez;
+  else
+    RAISE_APPLICATION_ERROR(-1001, 'Zaposleni ne postoji');
+  end IF;
+
+END daj_zaposleni_platu;
+
+/*5. Funkcija koja vraca broj timova*/
+CREATE OR REPLACE FUNCTION daj_broj_timova()
+  RETURN INTEGER
+  IS
+  lv_rez INTEGER;
+  CURSOR c_broj_timova IS
+    SELECT Count(id) INTO lv_rez FROM Timovi;
+
+  BEGIN
+    RETURN lv_rez;
+  END daj_broj_timova;
+
+/*6. Funkcija koja vraca broj igraca u timu, ili izuzetak ako tim ne postoji.*/
+
+CREATE OR REPLACE FUNCTION daj_broj_igraca(uv_tim_id INTEGER)
+  RETURN INTEGER
+  IS
+  lv_broj_igraca INTEGER;
+  lv_tim_postoji  INTEGER;
+
+  CURSOR c_postoji IS
+    SELECT Count(id) INTO lv_tim_postoji FROM Timovi
+  WHERE uv_tim_id = id;
+
+  BEGIN
+
+    if(lv_tim_postoji > 0) THEN
+      SELECT Count(i.id) INTO lv_broj_igraca FROM Igraci i, Timovi t
+      WHERE i.tim_id = t.id;
+      RETURN lv_broj_igraca;
+    else
+      RAISE_APPLICATION_ERROR(-13512, 'Tim ne postoji');
+    END IF;
+
+
+  END;
+
+/*7. Funkcija koja vraca broj poena igraca u nekoj utakmici*/
+CREATE OR REPLACE FUNCTION daj_broj_poena_igraca_utakmice(
+  uv_igrac_id INTEGER,
+  uv_utakmica_id INTEGER
+)
+RETURN INTEGER IS
+lv_broj_poena INTEGER;
+lv_utakmica_postoji INTEGER;
+lv_igrac_postoji INTEGER;
+
+CURSOR c_utakmica IS
+  SELECT Count(id) INTO lv_utakmica_postoji
+  FROM Utakmice WHERE uv_utakmica_id = id;
+
+CURSOR c_igrac IS
+  SELECT Count(id) INTO lv_igrac_postoji
+  FROM Igraci WHERE uv_igrac_id = id;
+
+BEGIN
+
+  if(lv_igrac_postoji > 0 AND lv_utakmica_postoji > 0) THEN
+    SELECT ie.broj_poena INTO lv_broj_poena FROM Utakmice u, Igraci i, IgraciEfikasnost ie
+    WHERE u.id = ie.utakmica_id AND i.id = ie.igrac_id
+    AND u.id = uv_utakmica_id AND i.id = uv_igrac_id;
+    return lv_broj_poena;
+  ELSE
+    RAISE_APPLICATION_ERROR(-1345, 'Igrac i/ili utakmica ne postoje');
+  END IF;
+
+END;
+
+/*8. Funkcija koja vraca ukupan broj opklada*/
+CREATE OR REPLACE FUNCTION daj_ukupan_broj_opklada()
+  RETURN INTEGER IS
+  lv_ukupno INTEGER;
+
+  CURSOR c_o IS
+    SELECT Nvl(Count(om.id), 0) + Nvl(Count(oi.id), 0) + Nvl(Count(ou.id), 0)
+    INTO lv_ukupno
+    FROM OpkladeUtakmice ou, OpkladeMecevi om, OpkladeIgraci oi;
+BEGIN
+  return lv_ukupno;
+END;
+
+/*9. Funkcija koja vraca ukupno uplaceno novca za igraca u odredjenoj utakmici (tabela opkladeigraci)*/
+CREATE OR REPLACE FUNCTION daj_ukupno_novca(
+  uv_igrac_id INTEGER,
+  uv_utakmica_id INTEGER
+)
+RETURN FLOAT IS
+lv_rez FLOAT;
+lv_utakmica_postoji INTEGER;
+lv_igrac_postoji INTEGER;
+
+CURSOR c_utakmica IS
+  SELECT Count(odabrana_utakmica_id) INTO lv_utakmica_postoji
+  FROM OpkladeIgraci WHERE uv_utakmica_id = odabrana_utakmica_id;
+
+CURSOR c_igrac IS
+  SELECT Count(odabrani_igrac_id) INTO lv_igrac_postoji
+  FROM OpkladeIgraci WHERE uv_igrac_id = odabrana_utakmica_id;
+
+BEGIN
+
+  if(lv_igrac_postoji > 0 AND lv_utakmica_postoji > 0) THEN
+   SELECT Sum(uplaceno_novca) INTO lv_rez FROM OpkladeIgraci
+   WHERE uv_igrac_id = odabrani_igrac_id
+   AND uv_utakmica_id = odabrana_utakmica_id;
+   return lv_rez;
+  ELSE
+    RAISE_APPLICATION_ERROR(-1325, 'Igrac i/ili utakmica ne postoje u opkladama ili ne postoje nikako');
+  end If;
+END;
+
+/*10. Funkcija koja vraca prosjek raspolozivih sredstava svih poslovnica */
+CREATE OR REPLACE FUNCTION daj_prosjek_rs_posl()
+  RETURN FLOAT IS
+  lv_rez FlOAT;
+  BEGIN
+    SELECT Avg(raspoloziva_sredstva) INTO lv_rez FROM Poslovnicel;
+    return lv_rez;
+  END;
+
+
+/*PROCEDURE*/
+
+CREATE OR REPLACE PROCEDURE  procedura(
+  id INTEGER
+)
+  IS
+  BEGIN
+    SELECT * FROM Klijenti k WHERE k.id = id;
+  END;
+
+

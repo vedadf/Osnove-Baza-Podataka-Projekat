@@ -640,7 +640,7 @@ IS
     IF (a > b) THEN return a;
     ELSE return b;
     END IF;
-  END first_fun;
+  END je_veci;
 
 /*2. Funkcija za provjeru postojanja klijenta koja vraca id klijenta ako je on pronadjen, ako ne onda vraca -1*/
 
@@ -693,10 +693,14 @@ IS
   lv_broj_zap INTEGER;
 
   CURSOR c_broj_zap IS
-    SELECT Count(id) INTO lv_broj_zap FROM Zaposleni
+    SELECT Count(id) FROM Zaposleni
       WHERE id = id_zaposlenog;
 
 BEGIN
+
+  OPEN c_broj_zap;
+  FETCH c_broj_zap INTO lv_broj_zap;
+  CLOSE c_broj_zap;
 
   if(lv_broj_zap = 1) then
     SELECT z.ime, z.prezime, p.plata INTO lv_ime, lv_prezime, lv_plata
@@ -716,9 +720,13 @@ CREATE OR REPLACE FUNCTION daj_broj_timova()
   IS
   lv_rez INTEGER;
   CURSOR c_broj_timova IS
-    SELECT Count(id) INTO lv_rez FROM Timovi;
+    SELECT Count(id) FROM Timovi;
 
   BEGIN
+    OPEN c_broj_timova;
+    FETCH c_broj_timova INTO lv_rez;
+    CLOSE c_broj_timova;
+
     RETURN lv_rez;
   END daj_broj_timova;
 
@@ -731,10 +739,14 @@ CREATE OR REPLACE FUNCTION daj_broj_igraca(uv_tim_id INTEGER)
   lv_tim_postoji  INTEGER;
 
   CURSOR c_postoji IS
-    SELECT Count(id) INTO lv_tim_postoji FROM Timovi
+    SELECT Count(id) FROM Timovi
   WHERE uv_tim_id = id;
 
   BEGIN
+
+    OPEN c_postoji;
+    FETCH c_postoji INTO lv_tim_postoji;
+    CLOSE c_postoji;
 
     if(lv_tim_postoji > 0) THEN
       SELECT Count(i.id) INTO lv_broj_igraca FROM Igraci i, Timovi t
@@ -758,14 +770,22 @@ lv_utakmica_postoji INTEGER;
 lv_igrac_postoji INTEGER;
 
 CURSOR c_utakmica IS
-  SELECT Count(id) INTO lv_utakmica_postoji
+  SELECT Count(id)
   FROM Utakmice WHERE uv_utakmica_id = id;
 
 CURSOR c_igrac IS
-  SELECT Count(id) INTO lv_igrac_postoji
+  SELECT Count(id)
   FROM Igraci WHERE uv_igrac_id = id;
 
 BEGIN
+
+  OPEN c_utakmica;
+  FETCH c_utakmica INTO lv_utakmica_postoji;
+  CLOSE c_utakmica;
+
+  OPEN c_igrac;
+  FETCH c_igrac INTO lv_igrac_postoji;
+  CLOSE c_igrac;
 
   if(lv_igrac_postoji > 0 AND lv_utakmica_postoji > 0) THEN
     SELECT ie.broj_poena INTO lv_broj_poena FROM Utakmice u, Igraci i, IgraciEfikasnost ie
@@ -785,9 +805,13 @@ CREATE OR REPLACE FUNCTION daj_ukupan_broj_opklada()
 
   CURSOR c_o IS
     SELECT Nvl(Count(om.id), 0) + Nvl(Count(oi.id), 0) + Nvl(Count(ou.id), 0)
-    INTO lv_ukupno
     FROM OpkladeUtakmice ou, OpkladeMecevi om, OpkladeIgraci oi;
 BEGIN
+
+  OPEN c_o;
+  FETCH c_o INTO lv_ukupno;
+  CLOSE c_o;
+
   return lv_ukupno;
 END;
 
@@ -802,14 +826,21 @@ lv_utakmica_postoji INTEGER;
 lv_igrac_postoji INTEGER;
 
 CURSOR c_utakmica IS
-  SELECT Count(odabrana_utakmica_id) INTO lv_utakmica_postoji
+  SELECT Count(odabrana_utakmica_id)
   FROM OpkladeIgraci WHERE uv_utakmica_id = odabrana_utakmica_id;
 
 CURSOR c_igrac IS
-  SELECT Count(odabrani_igrac_id) INTO lv_igrac_postoji
+  SELECT Count(odabrani_igrac_id)
   FROM OpkladeIgraci WHERE uv_igrac_id = odabrana_utakmica_id;
 
 BEGIN
+  OPEN c_utakmica;
+  FETCH c_utakmica INTO lv_utakmica_postoji;
+  CLOSE c_utakmica;
+
+  OPEN c_igrac;
+  FETCH c_igrac INTO lv_igrac_postoji;
+  CLOSE c_igrac;
 
   if(lv_igrac_postoji > 0 AND lv_utakmica_postoji > 0) THEN
    SELECT Sum(uplaceno_novca) INTO lv_rez FROM OpkladeIgraci
@@ -833,12 +864,39 @@ CREATE OR REPLACE FUNCTION daj_prosjek_rs_posl()
 
 /*PROCEDURE*/
 
-CREATE OR REPLACE PROCEDURE  procedura(
-  id INTEGER
+/*Procedura za azuriranje pogodnosti klijentu*/
+
+CREATE OR REPLACE PROCEDURE azuriraj_pogodnosti(
+  uv_klijent_id INTEGER,
+  uv_povecana_stopa_dobitka FLOAT,
+  uv_smanjenje_poreza FLOAT
 )
-  IS
-  BEGIN
-    SELECT * FROM Klijenti k WHERE k.id = id;
-  END;
+IS
 
+  lv_id_klijenta INTEGER := -1;
 
+  CURSOR c_klijent_postoji IS
+  SELECT k.id FROM Klijenti k
+  WHERE k.id = uv_klijent_id;
+
+BEGIN
+  OPEN c_klijent_postoji;
+  FETCH c_klijent_postoji INTO lv_id_klijenta;
+  CLOSE c_klijent_postoji;
+
+  if(lv_id_klijenta <> -1) THEN
+    if(uv_povecana_stopa_dobitka < 0 OR uv_povecana_stopa_dobitka > 1 OR uv_smanjenje_poreza < 0 OR uv_smanjenje_poreza > 1) THEN
+      RAISE_APPLICATION_ERROR(-4650, 'Parametri moraju biti u opsegu [0, 1]');
+    else
+      UPDATE Klijenti SET
+      povecana_stopa_dobitka = uv_povecana_stopa_dobitka,
+      smanjenje_poreza = uv_smanjenje_poreza
+      WHERE id = uv_klijent_id;
+    END IF;
+  else
+    RAISE_APPLICATION_ERROR(-4651, 'Klijent ne postoji');
+  END IF;
+
+END azuriraj_pogodnosti;
+
+CALL azuriraj_pogodnosti(1, 0.1, 0.02);

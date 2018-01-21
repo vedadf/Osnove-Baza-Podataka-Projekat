@@ -617,7 +617,7 @@ UNION ALL
 SELECT Poslovnice.id, sjediste, raspoloziva_sredstva
 FROM Poslovnice
 RIGHT JOIN Odjeli
-ON Poslovnice.id = Odjeli.poslovnica_id
+ON Poslovnice.id = Odjeli.poslovnica_id;
 
 /*INDEKSI*/
 
@@ -714,13 +714,13 @@ BEGIN
 
 END daj_zaposleni_platu;
 
-/*5. Funkcija koja vraca broj timova*/
-CREATE OR REPLACE FUNCTION daj_broj_timova()
+/*5. Funkcija koja vraca broj timova u ligi*/
+CREATE OR REPLACE FUNCTION daj_broj_timova(uv_liga_id INTEGER)
   RETURN INTEGER
   IS
   lv_rez INTEGER;
   CURSOR c_broj_timova IS
-    SELECT Count(id) FROM Timovi;
+    SELECT Count(id) FROM Timovi WHERE liga_id = uv_liga_id;
 
   BEGIN
     OPEN c_broj_timova;
@@ -798,14 +798,17 @@ BEGIN
 
 END;
 
-/*8. Funkcija koja vraca ukupan broj opklada*/
-CREATE OR REPLACE FUNCTION daj_ukupan_broj_opklada()
+/*8. Funkcija koja vraca ukupan broj opklada u poslovnici*/
+CREATE OR REPLACE FUNCTION daj_ukupan_broj_opklada(uv_poslovnica_id INTEGER)
   RETURN INTEGER IS
   lv_ukupno INTEGER;
 
   CURSOR c_o IS
     SELECT Nvl(Count(om.id), 0) + Nvl(Count(oi.id), 0) + Nvl(Count(ou.id), 0)
-    FROM OpkladeUtakmice ou, OpkladeMecevi om, OpkladeIgraci oi;
+    FROM OpkladeUtakmice ou, OpkladeMecevi om, OpkladeIgraci oi
+    WHERE ou.poslovnica_id = uv_poslovnica_id
+    AND om.poslovnica_id = uv_poslovnica_id
+    AND oi.poslovnica_id = uv_poslovnica_id;
 BEGIN
 
   OPEN c_o;
